@@ -28,7 +28,7 @@ function gather_backup_info()
             # TODO: Format string better
             CMA_NAME=$(echo "$line" | awk -F ": " '{print $2}') # Keep the space or it breaks; see above TODO
             mdsenv "$CMA_NAME"
-            printf "[INFO]: Moved to $CMA_NAME context\n" >> $LOG_FILE
+            printf "[$(date +%T)] [INFO]: Moved to $CMA_NAME context\n" >> $LOG_FILE
             continue
         else # Run cprid commands per GW
             DEVICE_DETAILS=$(echo "$line" | awk '{print $1";"$2}')
@@ -43,16 +43,16 @@ function gather_backup_info()
 
             # Check for cprid_util connectivity
             if [[ $(cprid_util -server $DEVICE_IP -verbose -debug rexec -rcmd /bin/bash -c "free") == *"(NULL BUF)"* ]]; then
-                printf "[ERROR]: Unable to connect to $DEVICE_HOSTNAME ($DEVICE_IP) via cprid_util!\n" >> $LOG_FILE
+                printf "[$(date +%T)] [ERROR]: Unable to connect to $DEVICE_HOSTNAME ($DEVICE_IP) via cprid_util!\n" >> $LOG_FILE
                 printf "\tConfirm that port 18208 is allowed to the device and that cprid and cprid_wd are running on device.\n" >> $LOG_FILE
                 continue
             else
-                printf "[INFO]: Connected to $DEVICE_HOSTNAME ($DEVICE_IP) via cprid_util\n" >> $LOG_FILE
+                printf "[$(date +%T)] [INFO]: Connected to $DEVICE_HOSTNAME ($DEVICE_IP) via cprid_util\n" >> $LOG_FILE
             fi
 
             # Run backup commands
             touch $BACKUP_FILE
-            printf "[INFO]: Created $BACKUP_FILE\n" >> $LOG_FILE
+            printf "[$(date +%T)] [INFO]: Created $BACKUP_FILE\n" >> $LOG_FILE
 
             # cprid_util -server $DEVICE_IP -verbose rexec -rcmd bash -c "mkdir -p $LOG_DIR"
 
@@ -62,12 +62,27 @@ function gather_backup_info()
             printf "===================================================\n" >> "$BACKUP_FILE"
             cprid_util -server $DEVICE_IP -verbose rexec -rcmd clish -c "show configuration" > "$BACKUP_FILE"
 
+            # TODO: Add check for changes to beloew files; if change make backup else don't
             printf "===================================================\n" >> "$BACKUP_FILE"
-            printf "DYNAMIC OBJECTS\n" >> "$BACKUP_FILE"
-            printf  "$TODAY\n" >> "$BACKUP_FILE"
+            printf "Dynamic Objects\n" >> "$BACKUP_FILE"
+            printf  "$FWDIR/database/dynamic_objects.db\n" >> "$BACKUP_FILE"
             printf "===================================================\n" >> "$BACKUP_FILE"
             cprid_util -server $DEVICE_IP -verbose rexec -rcmd bash -c "cat $FWDIR/database/dynamic_objects.db" >> "$BACKUP_FILE" 2>&1
             cprid_util -server $DEVICE_IP -verbose rexec -rcmd bash -c "cp $FWDIR/database/dynamic_objects.db $FWDIR/database/dynamic_objects.$TODAY" >> "$BACKUP_FILE" 2>&1
+
+            printf "===================================================\n" >> "$BACKUP_FILE"
+            printf "Proxy ARP\n" >> "$BACKUP_FILE"
+            printf  "$FWDIR/conf/local.arp\n" >> "$BACKUP_FILE"
+            printf "===================================================\n" >> "$BACKUP_FILE"
+            cprid_util -server $DEVICE_IP -verbose rexec -rcmd bash -c "cat $FWDIR/conf/local.arp" >> "$BACKUP_FILE" 2>&1
+            cprid_util -server $DEVICE_IP -verbose rexec -rcmd bash -c "cp $FWDIR/conf/local.arp $FWDIR/conf/local.arp.$TODAY" >> "$BACKUP_FILE" 2>&1
+
+            printf "===================================================\n" >> "$BACKUP_FILE"
+            printf "Kernel Parameters\n" >> "$BACKUP_FILE"
+            printf  "$FWDIR/boot/modules/fwkern.conf\n" >> "$BACKUP_FILE"
+            printf "===================================================\n" >> "$BACKUP_FILE"
+            cprid_util -server $DEVICE_IP -verbose rexec -rcmd bash -c "cat $FWDIR/boot/modules/fwkern.conf" >> "$BACKUP_FILE" 2>&1
+            cprid_util -server $DEVICE_IP -verbose rexec -rcmd bash -c "cp $FWDIR/boot/modules/fwkern.conf $FWDIR/boot/modules/fwkern.conf.$TODAY" >> "$BACKUP_FILE" 2>&1
         fi
 
     done < $LOG_GW_LIST
@@ -82,9 +97,9 @@ function generate_list_of_gateways()
     # Make new list of GWs
     printf "" > $LOG_GW_LIST
     if [[ -f $LOG_GW_LIST ]]; then
-        printf "[INFO]: Cleared $LOG_GW_LIST\n" >> $LOG_FILE
+        printf "[$(date +%T)] [INFO]: Cleared $LOG_GW_LIST\n" >> $LOG_FILE
     else
-        printf "[ERROR]: Unable to create $LOG_GW_LIST!\n" >> $LOG_FILE
+        printf "[$(date +%T)] [ERROR]: Unable to create $LOG_GW_LIST!\n" >> $LOG_FILE
         exit 1
     fi
 
@@ -117,7 +132,7 @@ printf "===================================================\n" >> $LOG_FILE
 which cprid_util 1> /dev/null 2>&1
 if [ "$?" -ne 0 ];
 then
-  printf "[ERROR]: Could not find the 'cprid_util' executable. Exiting...\n" >> $LOG_FILE
+  printf "[$(date +%T)] [ERROR]: Could not find the 'cprid_util' executable. Exiting...\n" >> $LOG_FILE
   exit 1
 fi
 
