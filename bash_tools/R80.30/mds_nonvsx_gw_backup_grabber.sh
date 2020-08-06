@@ -3,7 +3,7 @@
 #
 # Name: mds_nonvsx_gw_backup_grabber.sh
 # Author: Kernel Gordon
-# Date: 2020-08-04
+# Date: 2020-08-06
 # Purpose: Gather Gaia Clish config from all GWs managed by MDS
 #
 
