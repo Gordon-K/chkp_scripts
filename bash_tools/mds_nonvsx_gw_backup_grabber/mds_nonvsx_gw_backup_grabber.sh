@@ -8,6 +8,11 @@
 #
 
 #--------------------------------------------------------------------
+# Dependancies
+#--------------------------------------------------------------------
+source $CPDIR/tmp/.CPprofile.sh     # Make Checkpoint internals work in script
+
+#--------------------------------------------------------------------
 # Variables
 #--------------------------------------------------------------------
 TODAY=$(date +%F)
@@ -115,11 +120,6 @@ function generate_list_of_gateways()
             -a __name__,ipaddr,svn_version_name,appliance_type | sed 's/MISSING_ATTR//g' >> $LOG_GW_LIST
     done
 }
-
-#--------------------------------------------------------------------
-# Dependancies
-#--------------------------------------------------------------------
-source $CPDIR/tmp/.CPprofile.sh     # Make Checkpoint internals work in script
 
 #--------------------------------------------------------------------
 # Main
