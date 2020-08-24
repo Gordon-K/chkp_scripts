@@ -12,6 +12,23 @@
 #--------------------------------------------------------------------
 source $CPDIR/tmp/.CPprofile.sh     # Make Checkpoint internals work in script
 
+#
+# From sk90441
+#
+
+#Generic Check Point profile (Needed for most Check Point commands)
+source /etc/profile.d/CP.sh
+
+#VSX Profile (Needed for vsenv)
+source /etc/profile.d/vsenv.sh
+
+#MDS Profiles (Needed for mdsenv - dependent on /etc/profile.d/CP.sh)
+source $MDSDIR/scripts/MDSprofile.sh
+source $MDS_SYSTEM/shared/mds_environment_utils.sh
+
+#Misc Profile
+source $MDS_SYSTEM/shared/sh_utilities.sh
+
 #--------------------------------------------------------------------
 # Variables
 #--------------------------------------------------------------------
