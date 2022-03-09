@@ -57,42 +57,80 @@ def mds_domain_menu(all_mds_domains):
     return domain_name
 
 
-def add_hosts_from_csv(filepath, server, port, sid='', domain_sid=''):
+def add_object_from_csv(filepath, server, port, command, sid=''):
+    # NOTE: command should be add-<command> portion of API command
+
+    # Headers that should be used in input CSV depending on object to be added
+    column_headers = [];
+    if command == 'host':
+        column_headers = ['name', 'ip-address', 'ipv4-address', 'ipv6-address', 
+            'interfaces', 'nat-settings', 'tags', 'host-servers', 'set-if-exists', 
+            'color', 'comments', 'details-level', 'groups', 'ignore-warnings', 
+            'ignore-errors']
+    # TODO: Add headers for Network objects
+    # TODO: Add headers for Wildcard objects
+    if command == 'group':
+        column_headers = ['name', 'members', 'tags', 'color', 'comments', 
+            'details-level', 'groups', 'ignore-warnings', 'ignore-errors']
+        pass
+    # TODO: Add headers for GSN-Handover objects
+    # TODO: Add headers for Address Range objects
+    # TODO: Add headers for Multicast Address Range objects
+    # TODO: Add headers for Group with Exclusion objects
+    # TODO: Add headers for Simple Gateway objects
+    # TODO: Add headers for Simple Cluster objects
+    # TODO: Add headers for Checkpoint Host objects
+    # TODO: Add headers for Security Zone objects
+    # TODO: Add headers for Time objects
+    # TODO: Add headers for Time Group objects
+    # TODO: Add headers for Access Role objects
+    # TODO: Add headers for Dynamic objects
+    # TODO: Add headers for Trusted Client objects
+    # TODO: Add headers for Tag objects
+    # TODO: Add headers for DNS Domain objects
+    # TODO: Add headers for OPSEC Application objects
+    # TODO: Add headers for LSV Profile objects
+    # TODO: Add headers for Access Point Name objects
+
+    print('INFO: Reading {}...'.format(filepath))
     with open(filepath, 'r') as csv_file:
         csv_row_reader = csv.reader(csv_file)
 
+        # Validate CSV column headers and skip first row when creating objects
         is_first_row = True
         for row in csv_row_reader:
             # Skip first row in CSV
             if is_first_row:
+                if row != column_headers:
+                    print('ERROR: Column headers for {} object input CSV are not correct!'.format(command))
+                    print('INFO: Column headers should be:\n{}'.format(column_headers))
+                    return -1
                 is_first_row = False
                 continue
 
             # Convert row to JSON payload
             payload = {}
-            object_name = ''
-            if row != []:
-                object_name = 'h_' + str(row[0])
-                payload = {'name': object_name, 'ip-address': str(row[0])}
-            else:
-                continue
+            for i in range(0, len(column_headers)):
+                if i == 0:
+                    if command == 'host' and row[i] == '':      payload[column_headers[i]] = 'h_' + row[i+1]
+                    elif command == 'group' and row[i] == '':   payload[column_headers[i]] = 'g_' + row[i+1]
+                    else:                                       payload[column_headers[i]] = row[i]
+                elif row[i] != '':
+                    payload[column_headers[i]] = row[i]
             
-            # Depending on sid provided we will make API call to MDS or CMA
-            print('INFO: Attempting to create host object \'{}\''.format(object_name))
-            api_call = None
-            if sid != '':
-                api_call = chkp_api_call(server, port, 'add-host', payload, sid)
-            elif domain_sid != '':
-                api_call = chkp_api_call(server, port, 'add-host', payload, domain_sid)
+            print('INFO: Attempting to create {} object \'{}\''.format(command, payload['name']))
+            api_call = chkp_api_call(server, port, 'add-' + command, payload, sid)
 
             # Report status of API call
             if api_call != None and api_call.status_code != 200:
-                print('ERROR: Unable to create host object \'{}\''.format(object_name))
-                print('INFO:', api_call.json()['message'])
-                print('WARNINGS:', api_call.json()['warnings'])
-                print('ERRORS:', api_call.json()['errors'])
+                print('ERROR: Unable to create {} object \'{}\''.format(command, payload['name']))
+                if 'code' in api_call.json().keys():  print('\tCODE:', api_call.json()['code'])
+                if 'message' in api_call.json().keys(): print('\tMESSAGE:', api_call.json()['message'])
+                if 'warnings' in api_call.json().keys(): print('\tWARNINGS:', api_call.json()['warnings'])
+                if 'errors' in api_call.json().keys(): print('\tERRORS:', api_call.json()['errors'])
+                if 'blocking-errors' in api_call.json().keys(): print('\tBLOCKING ERRORS:', api_call.json()['blocking-errors'])
             else:
-                print('INFO: Created host object \'{}\''.format(object_name))
+                print('\tINFO: Created {} object \'{}\''.format(command, payload['name']))
 
 
 def main():
@@ -103,6 +141,8 @@ def main():
     parser.add_argument('-P', '--api_port', dest='api_port', help='')
     parser.add_argument('-u', '--username', dest='api_user', help='')
     parser.add_argument('-p', '--password', dest='api_pass', help='')
+    parser.add_argument('--add_host', action='store_true', help='')
+    parser.add_argument('--add_group', action='store_true', help='')
     args = parser.parse_args()
     
     if args.server_ip == None:
@@ -182,8 +222,12 @@ def main():
         else:
             # TODO: Get all current objects in domain
             # TODO: Compare existing objects to objects to be imported
-            print('INFO: Reading hosts from hosts.csv')
-            add_hosts_from_csv('hosts.csv', api_server, api_port, domain_sid=domain_sid)
+
+            # Read from CSV
+            if args.add_host:
+                add_object_from_csv('input.csv', api_server, api_port, 'host', domain_sid)
+            if args.add_group:
+                add_object_from_csv('input.csv', api_server, api_port, 'group', domain_sid)
 
             # Publish changes made
             print('INFO: Publishing changes')
