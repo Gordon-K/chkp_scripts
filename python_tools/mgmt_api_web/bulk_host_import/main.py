@@ -67,12 +67,15 @@ def add_object_from_csv(filepath, server, port, command, sid=''):
             'interfaces', 'nat-settings', 'tags', 'host-servers', 'set-if-exists', 
             'color', 'comments', 'details-level', 'groups', 'ignore-warnings', 
             'ignore-errors']
-    # TODO: Add headers for Network objects
+    if command == 'network':
+        column_headers = ['name', 'subnet', 'subnet4', 'subnet6', 'mask-length',
+            'mask-length4', 'mask-length6', 'subnet-mask', 'nat-settings', 'tags',
+            'broadcast', 'set-if-exists', 'color', 'comments', 'details-level', 
+            'groups', 'ignore-warnings', 'ignore-errors']
     # TODO: Add headers for Wildcard objects
     if command == 'group':
         column_headers = ['name', 'members', 'tags', 'color', 'comments', 
             'details-level', 'groups', 'ignore-warnings', 'ignore-errors']
-        pass
     # TODO: Add headers for GSN-Handover objects
     # TODO: Add headers for Address Range objects
     # TODO: Add headers for Multicast Address Range objects
@@ -136,13 +139,13 @@ def add_object_from_csv(filepath, server, port, command, sid=''):
 def main():
     # Get Checkpoint Management Server Creds from User
     parser = argparse.ArgumentParser(description='Bulk import host objects into Checkpoint Management SMS/MDS')
-    parser.add_argument('-s', '--server_ip', dest='server_ip', help='')
-    parser.add_argument('-d', '--domain', dest='mds_domain', help='')
-    parser.add_argument('-P', '--api_port', dest='api_port', help='')
-    parser.add_argument('-u', '--username', dest='api_user', help='')
-    parser.add_argument('-p', '--password', dest='api_pass', help='')
-    parser.add_argument('--add_host', action='store_true', help='')
-    parser.add_argument('--add_group', action='store_true', help='')
+    parser.add_argument('-s', '--server_ip', dest='server_ip', help='Management server IP or FQDN')
+    parser.add_argument('-d', '--domain', dest='mds_domain', help='MDS Domain name or UID')
+    parser.add_argument('-P', '--api_port', dest='api_port', help='Management API port number')
+    parser.add_argument('-u', '--username', dest='api_user', help='Management API admin user name')
+    parser.add_argument('-p', '--password', dest='api_pass', help='Management API admin password')
+    parser.add_argument('--add_host', action='store_true', help='Filepath to CSV for bulk host object import')
+    parser.add_argument('--add_group', action='store_true', help='Filepath to CSV for bulk group object import')
     args = parser.parse_args()
     
     if args.server_ip == None:
